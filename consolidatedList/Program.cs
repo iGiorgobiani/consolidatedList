@@ -13,6 +13,7 @@ using Lists;
 string filePath = @"C:\Users\User\OneDrive\Desktop\ConsolidateDlistApp\Consolidated.xml";
 string inputPath = @"C:\Users\User\OneDrive\Desktop\ConsolidateDlistApp\input.txt";
 string inputName = File.ReadAllText(inputPath); //To save input list
+string exit = "";
 
 //Creating lists of individuals and entities
 List<Individual> individuals = new List<Individual>(); 
@@ -30,40 +31,47 @@ int inputIndividualsAmount = 0;
 XDocument xmlDoc = XDocument.Load(filePath);
 XElement rootElement = xmlDoc.Root; //Adresses the root element = CONSOLIDATED_LIST
 
-//individualInput();
-
-Console.WriteLine($"USER INPUT\n_______________\n\nNAME: {inputName}");
 createIndividuals();
-inputVsIndividual();
 
-
-
-
-
-
-
-
-void inputVsIndividual() 
+while (exit != "0")
 {
-    bool similarityFound = false; // Flag to track if any similarity > 75 is found
+    individualInput();
+    inputVsIndividual();
+    Console.WriteLine("Press @ to close the application");
+    exit = Console.ReadLine();
+}
 
-    for (var i = 0; i < individuals.Count; i++)
-    {
-        string sumName = $"{individuals[i].FIRST_NAME} {individuals[i].SECOND_NAME} {individuals[i].THIRD_NAME}";
-        double similar = CompareStrings(sumName, inputName);
 
-        if (similar > 75)
+
+
+
+
+
+
+
+
+
+void inputVsIndividual()
+{
+        bool similarityFound = false; // Flag to track if any similarity > 75 is found
+
+        for (var i = 0; i < individuals.Count; i++)
         {
-            Console.WriteLine($"SIMILARITY : {similar}");
-            Console.WriteLine("BETWEEN");
-            Console.WriteLine($"{sumName} and {inputName}");
-            similarityFound = true; // Set flag to true if similarity > 75 is found
+            string sumName = $"{individuals[i].FIRST_NAME} {individuals[i].SECOND_NAME} {individuals[i].THIRD_NAME}";
+            double similar = CompareStrings(sumName, inputName);
+
+            if (similar > 75)
+            {
+                Console.WriteLine($"SIMILARITY : {similar}");
+                Console.WriteLine("BETWEEN");
+                Console.WriteLine($"{sumName} and {inputName}");
+                similarityFound = true; // Set flag to true if similarity > 75 is found
+            }
         }
-    }
-    if (!similarityFound)
-    {
-        Console.WriteLine("No significant similarity has been detected");
-    }
+        if (!similarityFound)
+        {
+            Console.WriteLine("No significant similarity has been detected");
+        }
 } //reports about similarity between user input and individuals list
 void individualInput() //Collecting input about individual and adding it to the list for later manipulation
 {
@@ -107,13 +115,16 @@ void individualInput() //Collecting input about individual and adding it to the 
     };
     inputIndividuals.Add(inputIndividual);
     inputIndividualsAmount++;
-
+    
     using (StreamWriter writer = new StreamWriter(inputPath))
     {
         writer.WriteLine($"{inputIndividual.FIRST_NAME} {inputIndividual.SECOND_NAME} {inputIndividual.THIRD_NAME}");
     }
 
     Console.WriteLine($"Text saved to {inputPath}");
+
+    inputName = File.ReadAllText(inputPath);
+    Console.WriteLine(($"USER INPUT\n_______________\n\nNAME: {inputName}"));
 } //asks for user input, adds it to the list, writes the list to txt file
 static void ReadDataFromFile(string fileRead)
 {
