@@ -44,3 +44,18 @@ namespace Lists
         public string ENTITY_ADDRESS { get; set; }
     }
 }
+
+namespace Inputs
+{
+    public class InputIndividual
+    {
+        public string FIRST_NAME { get; set; }
+        public string SECOND_NAME { get; set; }
+        public string THIRD_NAME { get; set; }
+        public string NATIONALITY { get; set; }
+        public string INDIVIDUAL_ADDRESS { get; set; }
+        public string DATE_OF_BIRTH { get; set; }
+        public string PLACE_OF_BIRTH { get; set; }
+
+    }
+}
