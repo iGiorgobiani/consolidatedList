@@ -1,13 +1,19 @@
 ﻿using System;
 using System.Net;
 using System.Numerics;
+using System.Reflection.Metadata;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 using Inputs;
 using Lists;
 
+
 //Indicating where file shall be downloaded
 string filePath = @"C:\Users\User\OneDrive\Desktop\ConsolidateDlistApp\Consolidated.xml";
+string inputPath = @"C:\Users\User\OneDrive\Desktop\ConsolidateDlistApp\input.txt";
+string inputName = File.ReadAllText(inputPath); //To save input list
+
 //Creating lists of individuals and entities
 List<Individual> individuals = new List<Individual>(); 
 List<Entity> entities = new List<Entity>();
@@ -24,15 +30,41 @@ int inputIndividualsAmount = 0;
 XDocument xmlDoc = XDocument.Load(filePath);
 XElement rootElement = xmlDoc.Root; //Adresses the root element = CONSOLIDATED_LIST
 
-//createIndividuals(); // Reading from file all entries of individuals and adding them to the list of individuals
-//createEntities(); // Reading from file all entries of entities and adding them to the list of entities
+//individualInput();
 
-//PrintList(); //Console writing all lists
-
-individualInput();
-PrintInputIndividualInput();
+Console.WriteLine($"USER INPUT\n_______________\n\nNAME: {inputName}");
+createIndividuals();
+inputVsIndividual();
 
 
+
+
+
+
+
+
+void inputVsIndividual() 
+{
+    bool similarityFound = false; // Flag to track if any similarity > 75 is found
+
+    for (var i = 0; i < individuals.Count; i++)
+    {
+        string sumName = $"{individuals[i].FIRST_NAME} {individuals[i].SECOND_NAME} {individuals[i].THIRD_NAME}";
+        double similar = CompareStrings(sumName, inputName);
+
+        if (similar > 75)
+        {
+            Console.WriteLine($"SIMILARITY : {similar}");
+            Console.WriteLine("BETWEEN");
+            Console.WriteLine($"{sumName} and {inputName}");
+            similarityFound = true; // Set flag to true if similarity > 75 is found
+        }
+    }
+    if (!similarityFound)
+    {
+        Console.WriteLine("No significant similarity has been detected");
+    }
+} //reports about similarity between user input and individuals list
 void individualInput() //Collecting input about individual and adding it to the list for later manipulation
 {
     // creating strings where input information will be held
@@ -73,10 +105,27 @@ void individualInput() //Collecting input about individual and adding it to the 
         DATE_OF_BIRTH = dateOfBirth,
         PLACE_OF_BIRTH = placeOfBirth
     };
-
     inputIndividuals.Add(inputIndividual);
     inputIndividualsAmount++;
-}
+
+    using (StreamWriter writer = new StreamWriter(inputPath))
+    {
+        writer.WriteLine($"{inputIndividual.FIRST_NAME} {inputIndividual.SECOND_NAME} {inputIndividual.THIRD_NAME}");
+    }
+
+    Console.WriteLine($"Text saved to {inputPath}");
+} //asks for user input, adds it to the list, writes the list to txt file
+static void ReadDataFromFile(string fileRead)
+{
+    // Read all lines from the text file
+    string[] lines = File.ReadAllLines(fileRead);
+
+    // Display each line of the file
+    foreach (string line in lines)
+    {
+        Console.WriteLine(line);
+    }
+} //reads data from txt file
 void createEntities()
 {
     foreach (XElement element in rootElement.Elements())
@@ -109,8 +158,8 @@ void createEntities()
             entitiesError++;
         }
     }
-}
-void createIndividuals()
+} // creates entities list based on XML file
+void createIndividuals() // creates individuals list based on XML file
 {
     foreach (XElement element in rootElement.Elements())
     {
@@ -148,7 +197,7 @@ void createIndividuals()
             individualsError++;
         }
     }
-}
+} //creates individuals list based on XML file
 void PrintIndividuals(List<Individual> individuals)
     {
         Console.WriteLine();
@@ -159,8 +208,7 @@ void PrintIndividuals(List<Individual> individuals)
         foreach (var individual in individuals)
 
             Console.WriteLine($"{individual.DATAID} {individual.FIRST_NAME} {individual.SECOND_NAME} {individual.THIRD_NAME}");
-    }
-
+    } //prints individuals
 void PrintEntities(List<Entity> entities)
 {
     Console.WriteLine();
@@ -171,8 +219,7 @@ void PrintEntities(List<Entity> entities)
     foreach (var entity in entities)
 
         Console.WriteLine($"{entity.DATAID} {entity.FIRST_NAME}");
-}
-
+} //prints entities
 void PrintList()
 {
     Console.WriteLine();
@@ -200,8 +247,7 @@ void PrintList()
     {
         Console.WriteLine($"{entity.DATAID} {entity.FIRST_NAME}");
     }
-}
-
+} // prints list of individuals and entities
 void PrintInputIndividualInput()
 {
     Console.WriteLine();
@@ -211,4 +257,71 @@ void PrintInputIndividualInput()
     foreach (var inputIndividual in inputIndividuals)
 
         Console.WriteLine($"{inputIndividual.FIRST_NAME}");
+} //prints list of input individuals
+partial class Program // Compares the two strings based on letter pair matches
+{
+    static double CompareStrings(string str1, string str2)
+    {
+        List<string> pairs1 = WordLetterPairs(str1.ToUpper());
+        List<string> pairs2 = WordLetterPairs(str2.ToUpper());
+
+        int intersection = 0;
+        int union = pairs1.Count + pairs2.Count;
+
+        for (int i = 0; i < pairs1.Count; i++)
+        {
+            for (int j = 0; j < pairs2.Count; j++)
+            {
+                if (pairs1[i] == pairs2[j])
+                {
+                    intersection++;
+                    pairs2.RemoveAt(j); // Must remove the match to prevent "AAAA" from appearing to match "AA" with 100% success
+                    break;
+                }
+            }
+        }
+
+        return (2.0 * intersection * 100) / union; // returns in percentage
+    }
+
+    // Gets all letter pairs for each
+    static List<string> WordLetterPairs(string str)
+    {
+        List<string> allPairs = new List<string>();
+
+        // Tokenize the string and put the tokens/words into an array
+        string[] words = Regex.Split(str, @"\s");
+
+        // For each word
+        foreach (string word in words)
+        {
+            if (!string.IsNullOrEmpty(word))
+            {
+                // Find the pairs of characters
+                string[] pairsInWord = LetterPairs(word);
+
+                foreach (string pair in pairsInWord)
+                {
+                    allPairs.Add(pair);
+                }
+            }
+        }
+        return allPairs;
+
+    }
+
+
+    // Generates an array containing every two consecutive letters in the input string
+    static string[] LetterPairs(string str)
+    {
+        int numPairs = str.Length - 1;
+        string[] pairs = new string[numPairs];
+
+        for (int i = 0; i < numPairs; i++)
+        {
+            pairs[i] = str.Substring(i, 2);
+        }
+        return pairs;
+    }
 }
+
